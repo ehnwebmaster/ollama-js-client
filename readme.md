@@ -270,46 +270,97 @@ await 🦙.prompt_stream("Hello",on_response)
 ## Use in the browser
 
 ```html
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <script src="https://cdn.jsdelivr.net/npm/ollama-js-client/browser/iife/ollama-js.global.js"></script>
+    <meta charset="UTF-8">
+    <title>Ollama Client</title>
+    <script src="https://cdn.jsdelivr.net/npm/ollama-js-client/dist/browser/iife/ollama-js.global.js"></script>
+    
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        #output { 
+            background: #f4f4f4; 
+            padding: 15px; 
+            min-height: 100px; 
+            border: 1px solid #ddd; 
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+        #input { width: 100%; height: 60px; margin-bottom: 10px; }
+        button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; }
+        button:hover { background: #0056b3; }
+    </style>
 </head>
 <body>
-  <div id="output"></div>
-  <textarea id="input"></textarea>
+
+  <h3>Chat with Ollama</h3>
+  <div id="output">Response here.</div>
+  
+  <textarea id="input" placeholder="Question"></textarea>
+  <br>
+  <button id="sendBtn">Ask</button>
+
   <script>
     const Ollama = window.OllamaJS;
 
     function setup() {
-        const input = document.getElementById("input")
-        const output = document.getElementById("output")
+        const input = document.getElementById("input");
+        const output = document.getElementById("output");
+        const btn = document.getElementById("sendBtn");
 
-        const 🦙 = new Ollama({
-            model:"llama3",
-            url:"http://127.0.0.1:11434/api/",
-        })
 
-        const on_response = (error,response) => {
+        const ollama = new Ollama({
+            model: "llama3",
+            url: "http://127.0.0.1:11434/api/" 
+        });
+
+        const on_response = (error, response) => {
             if (error) {
-                console.error(error)
+                console.error("Error:", error);
+                output.innerHTML += `\nError: ${error.message || error}`;
             }
             else if (response.done) {
-                // done!
+                output.innerHTML += "\n\n--- Fin de la respuesta ---\n";
             }
             else {
-                output.innerHTML += response
+                const text = response.response || response; 
+                output.innerHTML += text;
             }
-        }
+        };
 
-        input.addEventListener("keyup",async (event) => {
-            if (event.key === "Enter") {
-                await 🦙.prompt_stream(input.value,on_response)
-                input.value = ""
+        const enviarPregunta = async () => {
+            const texto = input.value;
+            if (!texto) return;
+
+            output.innerHTML = "Thinking... \n";
+            
+            try {
+                ollama.prompt_stream(texto, on_response);
+                
+                input.value = "";
+            } catch (e) {
+                output.innerHTML = "Error " + e.message;
             }
-        })
+        };
+
+        // BUtton
+        btn.addEventListener("click", enviarPregunta);
+
+        // Event Enter
+        input.addEventListener("keyup", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                enviarPregunta();
+            }
+        });
     }
-    setup()
+    
+    // Iniciamos
+    setup();
   </script>
 </body>
+</html>
 ```
 
 ---
